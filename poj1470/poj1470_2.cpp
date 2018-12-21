@@ -3,7 +3,7 @@
 
 #include<cstdio>
 #include<cstring>
-
+#include<algorithm>
 using namespace std;
 
 const int maxV = 900;
@@ -23,27 +23,32 @@ inline void add_edge(int u, int v)//u->v
 	head[u] = cnte;
 }
 
+const int N = maxV + 1;
+const int M = 10;
+int fa[N][M];
 int n;
 int depth[maxV + 1];
-int prt[maxV + 1];
 int root;
-int anc[maxV + 1][10];
 void build_graph()
 {
+	cnte = 0;
+	memset(head, 0, sizeof(head));
+	memset(fa, 0, sizeof(fa));
+	
 	for(int i = 0; i < n; ++i)
 	{
 		int v, num, adj;
 		scanf("%d : ( %d )", &v, &num);
-		while(num--)
+		for(int i = 0; i < num; ++i)
 		{
 			scanf("%d", &adj);
 			add_edge(v, adj);
-			prt[adj] = v;
+			fa[adj][0] = v;
 		}
 	}
 	root = 1;
-	while(prt[root])
-		root = prt[root];
+	while(fa[root][0])
+		root = fa[root][0];//找到root
 }
 
 void dfs(int u)
@@ -51,14 +56,11 @@ void dfs(int u)
 	for(int i = head[u]; i; i = edge[i].next)
 	{
 		int v = edge[i].to;
-		dfs(v);
 		depth[v] = depth[u] + 1;
+		dfs(v);
 	}
 }
 
-const int N = maxV + 1;
-const int M = 
-int fa[maxV + 1][10];
 void lca_init()
 {
 	for(int k = 1; k <= M-1; ++k)
@@ -69,42 +71,50 @@ void lca_init()
 int lca(int u, int v)
 {
 	if(depth[u] < depth[v])
-		swap(u, v);
+		swap(u, v);//depth[u] >= depth[v]
 
 	for(int i = M-1; i >= 0; --i)
-		if((dep[u] - dep[v] >> i) & 1)
-			u = fa[u][i];
+		if(((depth[u] - depth[v]) >> i) & 1)
+			u = fa[u][i];//将u提高到和v相同的高度
+
+	if(u == v)
+		return u;
+
 
 	for(int i = M-1; i >= 0; --i)
 		if(fa[u][i] != fa[v][i])
+		{
+			u = fa[u][i];
+			v = fa[v][i];//同时上升
+		}
 
-	int dif = depth[u] - depth[v];
-
+	return fa[u][0];
 }
 
+int ans[maxV + 1];
 int main()
 {
-	int ans[maxV + 1];
+	// freopen("test.txt", "r", stdin);
 	while(scanf("%d", &n) == 1)
 	{
+		memset(ans, 0, sizeof(ans));
 		build_graph();
 		depth[root] = 0;
-		dfs(root);
-
-	}
-
-	int num;
-	scanf("%d", &num);
-	while(num--)
-	{
-		int u, v;
-		scanf("( %d %d )", &u, &v);
-		ans[lca(u, v)]++;
-	}
-	for(int i = 1; i <= n; ++i)
-	{
-		if(ans[i] != 0)
-			printf("%d:%d\n", i, ans[i]);
+		dfs(root);//得到深度
+		lca_init();
+		int num;
+		scanf("%d", &num);
+		for(int i = 0; i < num; ++i)
+		{
+			int u, v;
+			scanf(" ( %d %d )", &u, &v);
+			ans[lca(u, v)]++;
+		}
+		for(int i = 1; i <= n; ++i)
+		{
+			if(ans[i] != 0)
+				printf("%d:%d\n", i, ans[i]);
+		}
 	}
 
 	return 0;
