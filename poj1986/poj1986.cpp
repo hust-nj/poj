@@ -17,10 +17,7 @@ struct Edge{
 	int to, next, w;
 } edge[maxV * 2 - 1];
 
-struct UnionFind{
-	int p;
-	int r;
-} uf[maxV + 1];
+int uf[maxV + 1];
 
 struct Query
 {
@@ -73,31 +70,28 @@ void build_query()
 
 int myfind(int v)
 {
-	if(v == uf[v].p)
+	if(v == uf[v])
 		return v;
-	uf[v].p = myfind(uf[v].p);
-	return uf[v].p;
-}
-
-inline void myunion(int u, int v)
-{
-	int t1 = myfind(u);
-	int t2 = myfind(v);
-	if(uf[t1].r > uf[t2].r)
-		uf[t2].p = t1;
-	else if(uf[t1].r < uf[t2].r)
-		uf[t1].p = t2;
-	else
-	{
-		uf[t1].p = t2;
-		uf[t2].r++;
-	}
+	uf[v] = myfind(uf[v]);
+	return uf[v];
 }
 
 int dist[maxV + 1];
 void dfs(int u)
 {
+	for(int i = headq[u]; i; i = qr[i].next)
+	{//处理询问
+		int q = qr[i].to;
+		if(visit[q])
+		{
+			int lca = myfind(q);
+			// printf("lca(%d, %d) = %d\n", u, q, lca);
+			ans[(i-1)/2] = dist[u] + dist[q] - 2 * dist[lca];
+		}
+	}
+
 	visit[u] = true;
+	// printf("dfs %d\n", u);
 	for(int i = head[u]; i; i = edge[i].next)
 	{
 		int v = edge[i].to;
@@ -106,20 +100,12 @@ void dfs(int u)
 			dist[v] = dist[u] + edge[i].w;
 			// printf("dist[%d] = %d\n", v, dist[v]);
 			dfs(v);
-			myunion(v, u);
+			uf[v] = u;
 		}
 	}
 
-	for(int i = headq[u]; i; i = qr[i].next)
-	{//处理询问
-		int q = qr[i].to;
-		if(visit[q])
-		{
-			int lca = myfind(q);
-			printf("lca(%d, %d) = %d\n", u, q, lca);
-			ans[i/2] = dist[u] + dist[q] - 2 * dist[lca];
-		}
-	}
+	// printf("dfs exit %d\n", u);
+	
 }
 
 
@@ -131,8 +117,7 @@ void init()
 	// memset(visit, 0, sizeof(visit));
 	for(int i = 1; i <= n; ++i)
 	{
-		uf[i].p = i;
-		uf[i].r = 0;
+		uf[i] = i;
 	}
 }
 
